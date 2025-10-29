@@ -39,9 +39,14 @@ def run_pit(working_dir):
     pit_command = (
         f'JAVA_HOME=$(/usr/libexec/java_home -v 11) '
         f'mvn org.pitest:pitest-maven:mutationCoverage '
-        f'-DtargetClasses="org.apache.commons.lang3.*" '
-        f'-DtargetTests="org.apache.commons.lang3.AnnotationUtilsTest.class" '
+        f'-DtargetClasses="org.apache.commons.csv.*" '
+        f'-DtargetTests="org.apache.commons.csv.*Test" '
+        f'-DoutputFormats=CSV,HTML,XML '  # 👈 aggiunge anche CSV
         f'-DexportLineCoverage=true'
+
+        #if the test binaries ar not in target/test-classes you must add this
+        #f'-DtestClassesDirectory={test_dir}'
+        #f'-DadditionalClasspathElements={test_dir}'
     )
     stdout, stderr, returncode = run_command(pit_command, cwd=working_dir)
     if returncode != 0:
@@ -51,10 +56,10 @@ def run_pit(working_dir):
 
 # Funzione principale
 def main():
-    project_id = "Lang"  # Esempio di progetto
+    project_id = "Csv"  # Esempio di progetto
     bug_id = "1"         # Esempio di bug ID
     fixed_version = "f"  # Versione post-fix
-    working_dir = "/tmp/lang_1_fixed"  # Directory di lavoro
+    working_dir = "/tmp/csv_1_fixed"  # Directory di lavoro
 
     # Creazione della directory di lavoro se non esiste
     os.makedirs(working_dir, exist_ok=True)
