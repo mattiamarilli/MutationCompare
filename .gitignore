@@ -187,3 +187,6 @@ fabric.properties
 ### Config template
 # Config files
 config.py
+
+results
+results/*
