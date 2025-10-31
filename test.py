@@ -225,6 +225,5 @@ def main():
 
             print(f"Mutation testing completato per {project_id} bug {bug_id}")
 
-
 if __name__ == "__main__":
     main()

@@ -183,7 +183,6 @@ fabric.properties
 # idea folder, uncomment if you don't need it
 .idea
 
-
 ### Config template
 # Config files
 config.py
