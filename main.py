@@ -25,11 +25,11 @@ def main():
             project_path = row['project_path']
             bug_id = row['bug_id']
             fixed_version = row['fixed_version']
-            id_dir = row['id_dir']
             test_dir = row['test_dir']
 
             working_dir = f"/tmp/{project_id.lower()}_{bug_id}_{fixed_version}"
             log_file = os.path.join(working_dir, "kill.csv")
+            major_log_file = os.path.join(working_dir, "mutants.log")
 
             os.makedirs(working_dir, exist_ok=True)
             print(f"\n=== Elaborazione {project_id} bug {bug_id} ===")
@@ -49,7 +49,7 @@ def main():
                 continue
 
             os.path.join(RESULTS_FOLDER, f"{project_id.lower()}_{DEFECTS4J_RESULTS_PATH}")
-            analyze_defects4j_report(log_file)
+            analyze_defects4j_report(log_file,major_log_file)
 
             print(f"Mutation testing completato per {project_id} bug {bug_id}")
 
