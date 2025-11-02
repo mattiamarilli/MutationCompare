@@ -2,12 +2,12 @@ from utils import run_command
 from environment.config import JAVA_HOME_11_PATH
 import pandas as pd
 
-def run_pit(working_dir, project_id, test_dir=None):
+def run_pit(working_dir, project_path, test_dir=None):
     pit_command = (
         f'JAVA_HOME=$({JAVA_HOME_11_PATH}) '
         f'mvn org.pitest:pitest-maven:mutationCoverage '
-        f'-DtargetClasses="org.apache.commons.{project_id}.*" '
-        f'-DtargetTests="org.apache.commons.{project_id}.*Test" '
+        f'-DtargetClasses="{project_path}.*" '
+        f'-DtargetTests="{project_path}.*Test" '
         f'-DoutputFormats=CSV '
         f'-DexportLineCoverage=true '
         f'{f"-DtestClassesDirectory={test_dir} " if test_dir else ""}'

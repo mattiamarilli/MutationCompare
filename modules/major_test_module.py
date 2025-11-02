@@ -12,21 +12,24 @@ def run_defects4j_mutation(working_dir):
     return True
 
 
-def convert_kill_csv_to_xml(csv_path, xml_path):
-    root = ET.Element("mutations")
+def analyze_defects4j_report(csv_path):
+    statuses = []
 
     with open(csv_path, newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
+            # Salta righe vuote o commentate
             if not row or row[0].startswith("#"):
                 continue
 
+            # Pulisce e rimuove celle vuote
             row = [r.strip() for r in row if r.strip()]
             if len(row) < 2:
                 continue
 
             mutant_id, status = row[:2]
 
+            # Mappa gli stati Defects4J → formati standard
             status_map = {
                 "LIVE": "SURVIVED",
                 "FAIL": "KILLED",
@@ -34,29 +37,17 @@ def convert_kill_csv_to_xml(csv_path, xml_path):
                 "EXC": "ERROR",
             }
             xml_status = status_map.get(status, "UNKNOWN")
+            statuses.append(xml_status)
 
-            mutation_elem = ET.SubElement(root, "mutation")
-            mutation_elem.set("id", mutant_id)
-            mutation_elem.set("status", xml_status)
+    # Conta le occorrenze degli stati
+    counts = Counter(statuses)
+    total = sum(counts.values())
 
-    tree = ET.ElementTree(root)
-    tree.write(xml_path, encoding="utf-8", xml_declaration=True)
-    print(f"File XML creato in {xml_path} dal CSV {csv_path}")
-
-
-def analyze_defects4j_report(xml_path):
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-    mutations = root.findall(".//mutation")
-
-    total = len(mutations)
-    statuses = Counter(m.get("status") for m in mutations)
-
-    killed = statuses.get("KILLED", 0)
-    survived = statuses.get("SURVIVED", 0)
-    no_coverage = statuses.get("NO_COVERAGE", 0)
-    error = statuses.get("ERROR", 0)
-    unknown = statuses.get("UNKNOWN", 0)
+    killed = counts.get("KILLED", 0)
+    survived = counts.get("SURVIVED", 0)
+    no_coverage = counts.get("NO_COVERAGE", 0)
+    error = counts.get("ERROR", 0)
+    unknown = counts.get("UNKNOWN", 0)
 
     denominator = killed + survived + error
     mutation_score = ((killed + error) / denominator * 100) if denominator > 0 else 0.0
