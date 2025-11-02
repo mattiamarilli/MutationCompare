@@ -1,5 +1,5 @@
-from utils import run_command, copy_mutation_report
-from config import JAVA_HOME_11_PATH
+from utils import run_command
+from environment.config import JAVA_HOME_11_PATH
 import pandas as pd
 
 def run_pit(working_dir, project_id, test_dir=None):

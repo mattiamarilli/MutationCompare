@@ -9,7 +9,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
+environment/
 build/
 develop-eggs/
 dist/
@@ -81,7 +81,7 @@ celerybeat-schedule
 
 # virtualenv
 venv/
-ENV/
+environment/
 
 # Spyder project settings
 .spyderproject
@@ -185,7 +185,7 @@ fabric.properties
 
 ### Config template
 # Config files
-config.py
+environment/config.py
 
 results
 results/*

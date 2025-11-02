@@ -1,14 +1,9 @@
 import os
 import csv
-from config import *
-from pit_test_module import run_pit, analyze_pitest_report
-from major_test_module import (
-    defects4j_checkout,
-    defects4j_compile,
-    run_defects4j_mutation,
-    convert_kill_csv_to_xml,
-    analyze_defects4j_report
-)
+from environment.config import *
+from modules.pit_test_module import run_pit, analyze_pitest_report
+from modules.defects4j_module import  defects4j_checkout, defects4j_compile
+from modules.major_test_module import run_defects4j_mutation, convert_kill_csv_to_xml, analyze_defects4j_report
 from utils import copy_mutation_report
 
 XML_PATH = "mutations.csv"
