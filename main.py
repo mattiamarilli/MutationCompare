@@ -38,14 +38,15 @@ def main():
                 continue
             if not defects4j_compile(working_dir):
                 continue
+            print(f"\n=== PIT Mutation Testing ===")
             if not run_pit(working_dir, project_path, test_dir):
-                continue
+               continue
 
             project_pit_res_path = os.path.join(RESULTS_FOLDER, f"{project_id.lower()}_{XML_PATH}")
             copy_mutation_report(working_dir, project_pit_res_path)
             analyze_pitest_report(project_pit_res_path)
-
-            if not run_defects4j_mutation(working_dir):
+            print(f"\n=== MAJOR Mutation Testing ===")
+            if not run_defects4j_mutation(working_dir, project_path):
                 continue
 
             os.path.join(RESULTS_FOLDER, f"{project_id.lower()}_{DEFECTS4J_RESULTS_PATH}")
