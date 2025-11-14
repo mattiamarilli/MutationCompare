@@ -5,6 +5,7 @@ from collections import Counter
 from utils import run_command
 import pandas as pd
 from pathlib import Path
+from collections import defaultdict
 
 """
 Estrae i nomi completamente qualificati delle classi compilate (.class)
@@ -170,4 +171,65 @@ def analyze_defects4j_report(csv_path, mutants_log_path):
     mutation_score_covered = (killed / mutants_covered * 100) if mutants_covered > 0 else 0.0
     mutation_score_total = (killed / total_mutants * 100) if total_mutants > 0 else 0.0
 
+    export_pit_like(df, csv_path)
     print(f"Mutation score: {mutation_score_covered:.1f}% ({mutation_score_total:.1f}%)\n")
+
+
+def export_pit_like(df, csv_path):
+    """Esporta un file CSV nello stile PIT mutation testing,
+    caricando automaticamente testMap.csv e covMap.csv dalla stessa cartella di csv_path."""
+
+    base_dir = os.path.dirname(csv_path)
+    test_map_path = os.path.join(base_dir, "testMap.csv")
+    cov_map_path  = os.path.join(base_dir, "covMap.csv")
+
+    # 1) Carica testMap.csv
+    test_names = {}
+    if os.path.exists(test_map_path):
+        with open(test_map_path, newline='') as f:
+            reader = csv.reader(f)
+            next(reader, None)
+            for row in reader:
+                if len(row) >= 2:
+                    test_no, test_name = row[:2]
+                    test_names[test_no] = test_name
+
+    # 2) Carica covMap.csv
+    mutant_tests = defaultdict(set)
+    if os.path.exists(cov_map_path):
+        with open(cov_map_path, newline='') as f:
+            reader = csv.reader(f)
+            next(reader, None)
+            for row in reader:
+                if len(row) >= 2:
+                    test_no, mutant_no = row[:2]
+                    mutant_tests[mutant_no].add(test_no)
+
+    # 3) Aggrega DataFrame per mutante + linea + mutatore + status
+    grouped = df.groupby(["ID", "Class", "Mutator", "Method", "Line", "Status"], dropna=False)
+
+    rows = []
+
+    for (mutant_id, class_name, mutator, method, line, status), group in grouped:
+        class_name = class_name or "UnknownClass"
+        file_name = class_name.split(".")[-1] + ".java"
+        mutator = mutator or "UnknownMutator"
+        method = method or "unknown"
+        line = line or "?"
+        status = status
+
+        test_list = mutant_tests.get(str(mutant_id), set())
+        if not test_list:
+            test_list = {"none"}
+
+        for t in sorted(test_list):
+            rows.append([file_name, class_name, mutator, method, line, status, test_names.get(t, t)])
+
+    # 4) Scrivi CSV
+    out_path = os.path.join(base_dir, "mutants_major.csv")
+    with open(out_path, "w", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["File", "Class", "Mutator", "Method", "Line", "Status", "Test"])
+        writer.writerows(rows)
+
+    print(f"Creato file PIT-like: {out_path}")

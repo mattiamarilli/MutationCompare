@@ -42,8 +42,8 @@ def main():
             if not run_pit(working_dir, project_path, test_dir):
                continue
 
-            project_pit_res_path = os.path.join(RESULTS_FOLDER, f"{project_id.lower()}_{XML_PATH}")
-            copy_mutation_report(working_dir, project_pit_res_path)
+            project_pit_res_path = os.path.join(RESULTS_FOLDER, f"{project_id.lower()}_pit_{XML_PATH}")
+            copy_mutation_report(working_dir, project_pit_res_path, True)
             analyze_pitest_report(project_pit_res_path)
             print(f"\n=== MAJOR Mutation Testing ===")
             if not run_defects4j_mutation(working_dir, project_path):
@@ -51,6 +51,8 @@ def main():
 
             os.path.join(RESULTS_FOLDER, f"{project_id.lower()}_{DEFECTS4J_RESULTS_PATH}")
             analyze_defects4j_report(log_file,major_log_file)
+            project_major_res_path = os.path.join(RESULTS_FOLDER, f"{project_id.lower()}_major_{XML_PATH}")
+            copy_mutation_report(working_dir, project_major_res_path, False)
 
             print(f"Mutation testing completato per {project_id} bug {bug_id}")
 
