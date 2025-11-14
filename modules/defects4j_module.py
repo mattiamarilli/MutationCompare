@@ -15,3 +15,11 @@ def defects4j_compile(working_dir):
         print(f"Errore nella compilazione del progetto: {stderr}")
         return False
     return True
+
+
+def defects4j_test(working_dir):
+    stdout, stderr, returncode = run_command("defects4j test", cwd=working_dir)
+    if returncode != 0:
+        print(f"Errore nel testing del progetto: {stderr}")
+        return False
+    return True

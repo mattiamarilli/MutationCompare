@@ -189,3 +189,6 @@ fabric.properties
 
 results
 results/*
+
+#Mutants folder
+mutants/*

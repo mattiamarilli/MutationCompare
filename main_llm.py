@@ -3,7 +3,7 @@ import csv
 import subprocess
 import shutil
 from environment.config import *
-from modules.defects4j_module import defects4j_checkout, defects4j_compile
+from modules.defects4j_module import defects4j_checkout, defects4j_compile, defects4j_test
 
 # === CONFIG ===
 os.environ["PATH"] += os.pathsep + D4J_BIN_PATH
@@ -15,55 +15,45 @@ os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
 # === HELPER ===
 
-def run_test_for_class(working_dir, mutated_class):
-    """Esegue il test corrispondente alla classe mutata (es. CSVFormatTest)."""
+def run_test_for_class_with_d4j(working_dir, mutated_class):
     test_name = f"{mutated_class}Test"
     print(f"🧪 Eseguo test: {test_name}")
 
-    result = subprocess.run(
-        ["defects4j", "test", "-t", test_name],
-        cwd=working_dir,
-        capture_output=True,
-        text=True
-    )
+    defects4j_compile(working_dir)
+    defects4j_test(working_dir)
 
-    if "Failing tests:" in result.stdout:
+    failing_tests_file = os.path.join(working_dir, "failing_tests")
+
+    if os.path.exists(failing_tests_file) and os.path.getsize(failing_tests_file) > 0:
+        print("💀 Mutante ucciso (failing_tests non vuoto)")
         return "killed"
-    elif "No tests executed" in result.stdout:
-        return "unknown"
     else:
-        return "survived"
+        print("Mutante sopravvissuto")
+        return "Survived"
 
 
-def apply_single_mutant(mutant_file, working_dir, base_package_path):
-    """Applica un singolo file mutante rinominandolo come la classe originale."""
+
+def apply_single_mutant(mutant_file, working_dir):
     if not os.path.exists(mutant_file):
         print(f"❌ Mutant file non trovato: {mutant_file}")
         return False
 
     filename = os.path.basename(mutant_file)
-    # Esempio: CSVFormat_Mutant_1.java -> CSVFormat.java
     original_class = filename.split("_Mutant_")[0] + ".java"
+    print()
 
     src_dir = os.path.join(working_dir, "src", "main", "java", "org", "apache", "commons", "csv")
     dest_file = os.path.join(src_dir, original_class)
+    print(src_dir)
 
     if not os.path.exists(dest_file):
-        print(f"⚠️ Classe originale non trovata: {dest_file}")
+        print(f"Classe originale non trovata: {dest_file}")
         return False
 
     # Sovrascrive la classe originale
     shutil.copy(mutant_file, dest_file)
     print(f"📄 Applicato mutante {filename} → {original_class}")
     return True
-
-
-def restore_original_code(working_dir, project_id, bug_id, fixed_version):
-    subprocess.run(
-        ["defects4j", "checkout", "-p", project_id, "-v", f"{bug_id}{fixed_version}", "-w", working_dir],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
 
 
 # === MAIN ===
@@ -86,6 +76,10 @@ def main():
             mutants_base_dir = os.path.join("mutants", f"{project_id}_{bug_id}")
             print(f"\n=== Elaborazione {project_id} bug {bug_id} ===")
 
+            if os.path.exists(working_dir):
+                print(f"⚠️  Cartella esistente trovata, la elimino: {working_dir}")
+                shutil.rmtree(working_dir)
+
             if not defects4j_checkout(project_id, bug_id, fixed_version, working_dir):
                 continue
             if not defects4j_compile(working_dir):
@@ -97,29 +91,17 @@ def main():
                         continue
 
                     full_mutant_path = os.path.join(root, mutant_file)
-                    base_package_path = os.path.relpath(root, mutants_base_dir)
-
                     mutated_class = mutant_file.split("_Mutant_")[0]
 
-                    print(f"\n🧬 Test mutante: {mutant_file}")
+                    print(f"\n Test mutante: {mutant_file}")
 
-                    if not apply_single_mutant(full_mutant_path, working_dir, base_package_path):
+                    if not apply_single_mutant(full_mutant_path, working_dir):
                         continue
 
-                    if not defects4j_compile(working_dir):
-                        print(" Compilazione fallita per mutante, skip.")
-                        restore_original_code(working_dir, project_id, bug_id, fixed_version)
-                        continue
-
-                    result = run_test_for_class(working_dir, mutated_class)
+                    result = run_test_for_class_with_d4j(working_dir, mutated_class)
 
                     with open(RESULTS_FILE, "a") as f:
                         f.write(f"{project_id},{bug_id},{mutant_file},{mutated_class},{result}\n")
-
-                    # Ripristina il codice originale per il prossimo mutante
-                    restore_original_code(working_dir, project_id, bug_id, fixed_version)
-                    defects4j_compile(working_dir)
-
 
 if __name__ == "__main__":
     main()
