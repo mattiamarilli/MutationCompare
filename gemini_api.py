@@ -1,7 +1,9 @@
 from google import genai
 import json
 
-client = genai.Client(api_key="")
+from environment.config import GOOGLE_AI_API_KEY
+
+client = genai.Client(api_key=f"{GOOGLE_AI_API_KEY}")
 
 mutators_description = """
 - AOR (Arithmetic Operator Replacement): +, -, *, /, %
@@ -16,7 +18,7 @@ mutators_description = """
 - MTD (Method Call Replacement): replace a method call with another valid one
 """
 
-def mutate_java_class(java_class: str, memory_mutations, num_mutations=3):
+def mutate_java_class(java_class: str, memory_mutations):
 
     valid_lines = {line.strip() for line in java_class.split("\n") if line.strip()}
 
@@ -83,26 +85,116 @@ def mutate_java_class(java_class: str, memory_mutations, num_mutations=3):
 
     return new_mutations
 
-
-# ================================================================
-# ESEMPIO DI UTILIZZO
-# ================================================================
-
 memory_mutations = set()
 
 java_code = """
-class Calculator {
-    public int add(int a, int b) {
-        return a + b;
+
+package org.apache.commons.csv;
+
+import java.io.IOException;
+
+abstract class Lexer {
+
+    private final boolean isEncapsulating;
+    private final boolean isEscaping;
+    private final boolean isCommentEnabled;
+
+    private final char delimiter;
+    private final char escape;
+    private final char encapsulator;
+    private final char commmentStart;
+
+    final boolean surroundingSpacesIgnored;
+    final boolean emptyLinesIgnored;
+
+    final CSVFormat format;
+
+    final ExtendedBufferedReader in;
+
+    Lexer(CSVFormat format, ExtendedBufferedReader in) {
+        this.format = format;
+        this.in = in;
+        this.isEncapsulating = format.isEncapsulating();
+        this.isEscaping = format.isEscaping();
+        this.isCommentEnabled = format.isCommentingEnabled();
+        this.delimiter = format.getDelimiter();
+        this.escape = format.getEscape();
+        this.encapsulator = format.getEncapsulator();
+        this.commmentStart = format.getCommentStart();
+        this.surroundingSpacesIgnored = format.isSurroundingSpacesIgnored();
+        this.emptyLinesIgnored = format.isEmptyLinesIgnored();
     }
 
-    public int subtract(int a, int b) {
-        return a - b;
+    int getLineNumber() {
+        return in.getLineNumber();
+    }
+
+    int readEscape(int c) throws IOException {
+        c = in.read();
+        switch (c) {
+            case 'r':
+                return '\r';
+            case 'n':
+                return '\n';
+            case 't':
+                return '\t';
+            case 'b':
+                return '\b';
+            case 'f':
+                return '\f';
+            default:
+                return c;
+        }
+    }
+
+    void trimTrailingSpaces(StringBuilder buffer) {
+        int length = buffer.length();
+        while (length > 0 && Character.isWhitespace(buffer.charAt(length - 1))) {
+            length = length - 1;
+        }
+        if (length != buffer.length()) {
+            buffer.setLength(length);
+        }
+    }
+
+    boolean isWhitespace(int c) {
+        return (c != format.getDelimiter()) && Character.isWhitespace((char) c);
+    }
+
+    boolean isEndOfLine(int c) throws IOException {
+        if (c == '\r' && in.lookAhead() == '\n') {
+            // note: does not change c outside of this method !!
+            c = in.read();
+        }
+        return (c == '\n' || c == '\r');
+    }
+
+    boolean isEndOfFile(int c) {
+        return c == ExtendedBufferedReader.END_OF_STREAM;
+    }
+
+    abstract Token nextToken(Token reusableToken) throws IOException;
+
+    boolean isDelimiter(int c) {
+        return c == delimiter;
+    }
+
+    boolean isEscape(int c) {
+        return isEscaping && c == escape;
+    }
+
+    boolean isEncapsulator(int c) {
+        return isEncapsulating && c == encapsulator;
+    }
+
+    boolean isCommentStart(int c) {
+        return isCommentEnabled && c == commmentStart;
     }
 }
+
 """
 
-mutations = mutate_java_class(java_code, memory_mutations, num_mutations=100)
+mutations = mutate_java_class(java_code, memory_mutations)
 
 print(f"\n# Mutazioni generate: {len(mutations)} mutations")
 
