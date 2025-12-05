@@ -44,13 +44,13 @@ def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
 
-def generate_mutants_for_project(working_dir, project_id, bug_id):
+def generate_mutants_for_project(working_dir, project_id, bug_id, is_open_router=False, model=""):
     src_dir = os.path.join(working_dir, "src", "main", "java")
     base_mutants_dir = os.path.join("mutants", f"{project_id}_{bug_id}")
 
     ensure_dir(base_mutants_dir)
 
-    engine = LLMMutationEngine()
+    engine = LLMMutationEngine(is_open_router, model)
 
     print(f"🔍 Generazione mutanti per: {src_dir}")
 
@@ -172,6 +172,7 @@ def apply_single_mutant(mutant_file, working_dir):
 
 def main():
     projects_csv = "environment/projects.csv"
+    open_router_models = [OPENROUTER_OPEN_GPT_OSS20B_MODEL_NAME, OPENROUTER_NVIDIA_NEMOTRON_MODEL_NAME, OPENROUTER_AMAZON_NOVA_MODEL_NAME]
 
     if not os.path.exists(RESULTS_FILE):
         with open(RESULTS_FILE, "w") as f:
@@ -186,6 +187,7 @@ def main():
 
             working_dir = f"/tmp/{project_id.lower()}_{bug_id}_{fixed_version}"
             mutants_base_dir = os.path.join("mutants", f"{project_id}_{bug_id}")
+            
             print(f"\n=== Elaborazione {project_id} bug {bug_id} ===")
 
             if os.path.exists(working_dir):
@@ -197,43 +199,50 @@ def main():
             if not defects4j_compile(working_dir):
                 continue
 
-            generate_mutants_for_project(working_dir, project_id, bug_id)
+            for model in open_router_models:
+                if os.path.exists(mutants_base_dir):
+                    shutil.rmtree(mutants_base_dir)
+                    
+                generate_mutants_for_project(working_dir, project_id, bug_id, model!="", model)
 
-            # === SCANSIONE FILE JAVA DOPO COMPILE ===
-            src_dir = os.path.join(working_dir, "src/main/java")
+                # === SCANSIONE FILE JAVA DOPO COMPILE ===
+                src_dir = os.path.join(working_dir, "src/main/java")
 
-            print(f"🔍 Scansione file .java in {src_dir}")
+                print(f"🔍 Scansione file .java in {src_dir}")
 
-            for root, _, files in os.walk(src_dir):
-                for file in files:
-                    if file.endswith(".java"):
-                        full_path = os.path.join(root, file)
-                        log_java_file(full_path, working_dir)
+                for root, _, files in os.walk(src_dir):
+                    for file in files:
+                        if file.endswith(".java"):
+                            full_path = os.path.join(root, file)
+                            log_java_file(full_path, working_dir)
 
-            for root, _, files in os.walk(mutants_base_dir):
-                for mutant_file in files:
-                    if os.path.exists(working_dir):
-                        print(f"⚠️  Cartella esistente trovata, la elimino: {working_dir}")
-                        shutil.rmtree(working_dir)
+                for root, _, files in os.walk(mutants_base_dir):
+                    for mutant_file in files:
+                        if os.path.exists(working_dir):
+                            print(f"⚠️  Cartella esistente trovata, la elimino: {working_dir}")
+                            shutil.rmtree(working_dir)
 
-                    if not defects4j_checkout(project_id, bug_id, fixed_version, working_dir):
-                        continue
+                        if not defects4j_checkout(project_id, bug_id, fixed_version, working_dir):
+                            continue
 
-                    if not mutant_file.endswith(".java"):
-                        continue
+                        if not mutant_file.endswith(".java"):
+                            continue
 
-                    full_mutant_path = os.path.join(root, mutant_file)
-                    mutated_class = mutant_file.split("_Mutant_")[0]
+                        full_mutant_path = os.path.join(root, mutant_file)
+                        mutated_class = mutant_file.split("_Mutant_")[0]
 
-                    print(f"\n Test mutante: {mutant_file}")
+                        print(f"\n Test mutante: {mutant_file}")
 
-                    if not apply_single_mutant(full_mutant_path, working_dir):
-                        continue
+                        if not apply_single_mutant(full_mutant_path, working_dir):
+                            continue
+                        
+                        with open(RESULTS_FILE, "a") as f:
+                            f.write(f"======= MODEL {model or 'GEMINI'}\n")
 
-                    result = run_test_for_class_with_d4j(working_dir, mutated_class)
+                        result = run_test_for_class_with_d4j(working_dir, mutated_class)
 
-                    with open(RESULTS_FILE, "a") as f:
-                        f.write(f"{project_id},{bug_id},{mutant_file},{mutated_class},{result}\n")
+                        with open(RESULTS_FILE, "a") as f:
+                            f.write(f"{project_id},{bug_id},{mutant_file},{mutated_class},{result}\n")
 
 if __name__ == "__main__":
     main()

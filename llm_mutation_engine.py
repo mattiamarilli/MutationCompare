@@ -1,7 +1,8 @@
 import json
 import re
+import requests
 from google import genai
-from environment.config import GOOGLE_AI_API_KEY
+from environment.config import GOOGLE_AI_API_KEY, OPENROUTER_API_KEY
 
 
 class LLMMutationEngine:
@@ -18,8 +19,12 @@ class LLMMutationEngine:
     - MTD (Method Call Replacement): replace a method call with another valid one
     """
 
-    def __init__(self):
-        self.client = genai.Client(api_key=GOOGLE_AI_API_KEY)
+    def __init__(self, open_router = False, model = ""):
+        self.is_open_router = open_router
+        if open_router == False:
+            self.client = genai.Client(api_key=GOOGLE_AI_API_KEY)
+        else:
+            self.model = model
 
     def mutate_java_file(self, java_file_path: str):
         try:
@@ -68,13 +73,29 @@ class LLMMutationEngine:
             - No commentary, no text, only JSON objects.
         """
 
-        response = self.client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=prompt,
-        )
+        if self.is_open_router == True:
+            response = requests.post(
+                url="https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                data=json.dumps({
+                    "model": f"{self.model}",
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ]
+                })
+            )
+            text = response.json()["choices"][0]["message"]["content"].strip()
+        else:
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash-lite",
+                contents=prompt,
+            )
+            text = response.text.strip()
 
         new_mutations = []
-        text = response.text.strip()
 
         for line in text.split("\n"):
             try:
