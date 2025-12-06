@@ -36,12 +36,8 @@ class LLMMutationEngine:
 
         return self._mutate_java_class(java_class)
 
-    # === NEW: rimuove commenti singoli e multilinea ===
     def _remove_comments(self, java_class: str) -> str:
-        # Rimuovi commenti multilinea
         java_class = re.sub(r"/\*[\s\S]*?\*/", "", java_class, flags=re.MULTILINE)
-
-        # Rimuovi commenti singoli
         java_class = re.sub(r"//.*", "", java_class)
 
         return java_class

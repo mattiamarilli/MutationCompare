@@ -3,17 +3,15 @@ import csv
 import shutil
 from environment.config import *
 from modules.defects4j_module import defects4j_checkout, defects4j_compile, defects4j_test
-from llm_mutation_engine import LLMMutationEngine
+from modules.llm_mutation_engine_module import LLMMutationEngine
 
-# === CONFIG ===
 os.environ["PATH"] += os.pathsep + D4J_BIN_PATH
 os.environ["JAVA_HOME"] = JAVA_HOME_11_PATH
 os.environ["PATH"] = os.environ["JAVA_HOME"] + "/bin:" + os.environ["PATH"]
 
 RESULTS_FILE = os.path.join(RESULTS_FOLDER, "llm_mutation_results.csv")
-os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
-# === HELPER ===
+os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
 def run_test_for_class_with_d4j(working_dir, mutated_class):
     test_name = f"{mutated_class}Test"
@@ -61,11 +59,9 @@ def generate_mutants_for_project(working_dir, project_id, bug_id, is_open_router
 
             java_path = os.path.join(root, file)
 
-            # Percorso relativo tipo org/apache/...
             rel_path = os.path.relpath(java_path, src_dir)
             rel_folder = os.path.dirname(rel_path)
 
-            # cartella destinazione mutanti per questo file
             target_dir = os.path.join(base_mutants_dir, rel_folder)
             ensure_dir(target_dir)
 
@@ -82,14 +78,12 @@ def generate_mutants_for_project(working_dir, project_id, bug_id, is_open_router
 
             class_name = file.replace(".java", "")
 
-            # Salvo ogni mutante come file .java
             for idx, mutation in enumerate(mutations, start=1):
                 mutant_file = os.path.join(
                     target_dir,
                     f"{class_name}_Mutant_{idx}.java"
                 )
 
-                # Ricostruisco il file sostituendo SOLO la linea modificata
                 with open(java_path, "r") as original_file:
                     content_lines = original_file.readlines()
 
@@ -104,12 +98,9 @@ def generate_mutants_for_project(working_dir, project_id, bug_id, is_open_router
                         new_content.append(line)
 
                 with open(mutant_file, "w") as mf:
-                    # Commento in cima al file che descrive la mutazione
                     mf.write("// MUTATION:\n")
                     mf.write(f"// ORIGINAL: {original_line}\n")
                     mf.write(f"// MUTATED:  {mutated_line}\n\n")
-
-                    # Scrivi il file mutato
                     mf.write("".join(new_content))
 
                 print(f"   ➕ Mutante creato: {mutant_file}")
@@ -126,12 +117,6 @@ def apply_single_mutant(mutant_file, working_dir):
 
     print(f"\n🧬 Applico mutante: {filename}")
 
-    # Esempio path:
-    # mutants/CSV_1/org/apache/commons/csv/CSVParser_Mutant_1.java
-    #
-    # obiettivo:
-    #   estrarre org/apache/commons/csv
-    #
     try:
         after_mutants = mutant_file.split("mutants" + os.sep, 1)[1]
     except IndexError:
@@ -140,11 +125,6 @@ def apply_single_mutant(mutant_file, working_dir):
 
     parts = after_mutants.split(os.sep)
 
-    # parts è del tipo:
-    # ['CSV_1', 'org', 'apache', 'commons', 'csv', 'CSVParser_Mutant_1.java']
-    #
-    # vogliamo solo:
-    # ['org', 'apache', 'commons', 'csv']
     if len(parts) < 3:
         print("❌ Struttura troppo corta: impossibile determinare il package.")
         return False
@@ -153,7 +133,6 @@ def apply_single_mutant(mutant_file, working_dir):
 
     print(f"📁 Package rilevato: {rel_package_path}")
 
-    # Costruisco la cartella target
     dest_dir = os.path.join( working_dir, "src", "main", "java", rel_package_path)
     os.makedirs(dest_dir, exist_ok=True)
 
@@ -161,7 +140,6 @@ def apply_single_mutant(mutant_file, working_dir):
 
     print(f"📄 Scrivo mutante in: {dest_file}")
 
-    # Copia (sovrascrive la classe originale)
     shutil.copy(mutant_file, dest_file)
 
     print(f"✅ Mutante applicato con successo!")
@@ -172,7 +150,7 @@ def apply_single_mutant(mutant_file, working_dir):
 
 def main():
     projects_csv = "environment/projects.csv"
-    open_router_models = [OPENROUTER_OPEN_GPT_OSS20B_MODEL_NAME, OPENROUTER_NVIDIA_NEMOTRON_MODEL_NAME, OPENROUTER_AMAZON_NOVA_MODEL_NAME]
+    llm_models = [OPENROUTER_OPEN_GPT_OSS20B_MODEL_NAME, GOOGLE_GEMINI]
 
     if not os.path.exists(RESULTS_FILE):
         with open(RESULTS_FILE, "w") as f:
@@ -191,7 +169,6 @@ def main():
             print(f"\n=== Elaborazione {project_id} bug {bug_id} ===")
 
             if os.path.exists(working_dir):
-                print(f"⚠️  Cartella esistente trovata, la elimino: {working_dir}")
                 shutil.rmtree(working_dir)
 
             if not defects4j_checkout(project_id, bug_id, fixed_version, working_dir):
@@ -199,16 +176,13 @@ def main():
             if not defects4j_compile(working_dir):
                 continue
 
-            for model in open_router_models:
+            for model in llm_models:
                 if os.path.exists(mutants_base_dir):
                     shutil.rmtree(mutants_base_dir)
                     
-                generate_mutants_for_project(working_dir, project_id, bug_id, model!="", model)
+                generate_mutants_for_project(working_dir, project_id, bug_id, model!=GOOGLE_GEMINI, model)
 
-                # === SCANSIONE FILE JAVA DOPO COMPILE ===
                 src_dir = os.path.join(working_dir, "src/main/java")
-
-                print(f"🔍 Scansione file .java in {src_dir}")
 
                 for root, _, files in os.walk(src_dir):
                     for file in files:
@@ -219,7 +193,6 @@ def main():
                 for root, _, files in os.walk(mutants_base_dir):
                     for mutant_file in files:
                         if os.path.exists(working_dir):
-                            print(f"⚠️  Cartella esistente trovata, la elimino: {working_dir}")
                             shutil.rmtree(working_dir)
 
                         if not defects4j_checkout(project_id, bug_id, fixed_version, working_dir):
@@ -235,13 +208,16 @@ def main():
 
                         if not apply_single_mutant(full_mutant_path, working_dir):
                             continue
-                        
-                        with open(RESULTS_FILE, "a") as f:
-                            f.write(f"======= MODEL {model or 'GEMINI'}\n")
+
+                        result_base_dir = model.split("/")[0]
 
                         result = run_test_for_class_with_d4j(working_dir, mutated_class)
 
-                        with open(RESULTS_FILE, "a") as f:
+                        if not os.path.exists(f"{result_base_dir}/{RESULTS_FILE}"):
+                            with open(f"{result_base_dir}/{RESULTS_FILE}", "w") as f:
+                                f.write("project_id,bug_id,mutant_name,class,result\n")
+
+                        with open(f"{result_base_dir}/{RESULTS_FILE}", "a") as f:
                             f.write(f"{project_id},{bug_id},{mutant_file},{mutated_class},{result}\n")
 
 if __name__ == "__main__":
