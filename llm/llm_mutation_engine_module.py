@@ -4,7 +4,6 @@ import requests
 from google import genai
 from environment.config import GOOGLE_AI_API_KEY, OPENROUTER_API_KEY
 
-
 class LLMMutationEngine:
     MUTATORS_DESCRIPTION = """
     - AOR (Arithmetic Operator Replacement): +, -, *, /, %
