@@ -1,6 +1,5 @@
 import os
 import csv
-import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from utils import run_command
 import pandas as pd

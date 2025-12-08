@@ -18,7 +18,7 @@ os.makedirs(RESULTS_FOLDER, exist_ok=True)
 def main():
     # CSV defining the projects to analyze
     projects_csv = "environment/projects.csv"
-    llm_models = [OPENROUTER_OPEN_GPT_OSS20B_MODEL_NAME]
+    llm_models = ['google/gemini-2.5-flash-lite']
 
     # Create global results file if missing
     if not os.path.exists(RESULTS_FILE):

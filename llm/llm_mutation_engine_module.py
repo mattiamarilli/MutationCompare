@@ -4,7 +4,6 @@ import requests
 from google import genai
 from environment.config import GOOGLE_AI_API_KEY, OPENROUTER_API_KEY
 
-
 class LLMMutationEngine:
     """
     Engine to generate mutations of Java classes using an LLM.
@@ -104,7 +103,7 @@ class LLMMutationEngine:
             - The mutated line must differ from the original.
             - Do not replace variables with function calls.
             - Output MUST be JSON objects, one per line:
-              {{'{"original_code": "<original_code>", "mutated_code": "<mutated_code>"}'}}
+              {{{{"original_code": "<original_code>", "mutated_code": "<mutated_code>"}}}}
             - If the original line does not exist, skip the mutation.
             - No commentary, only JSON objects.
 
@@ -126,11 +125,12 @@ class LLMMutationEngine:
                     "messages": [{"role": "user", "content": prompt}]
                 })
             )
+            print(response)
             text = response.json()["choices"][0]["message"]["content"].strip()
         else:
             # Send request to Google GenAI
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash-lite",
+                model="gemini-3-pro-preview",
                 contents=prompt,
             )
             text = response.text.strip()

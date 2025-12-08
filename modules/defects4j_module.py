@@ -1,7 +1,5 @@
 from utils import run_command
 import subprocess
-import os
-import time
 
 def defects4j_checkout(project_id, bug_id, fixed_version, working_dir):
     """

@@ -11,14 +11,19 @@ def run_test_for_class_with_d4j(working_dir, mutated_class):
     test_name = f"{mutated_class}Test"
     print(f"Running test: {test_name}")
 
-    defects4j_compile(working_dir)
+    try:
+        compiled = defects4j_compile(working_dir)
+    except Exception as e:
+        return "build_failed"
+    
+    if not compiled:
+        return "build_failed"
 
     result = defects4j_test_with_timeout(working_dir)
 
-    # Timeout means the mutant is killed
     if result == "timeout":
         print("Timeout (>30s) - mutant killed")
-        return "killed"
+        return "timeout"
 
     failing_tests_file = os.path.join(working_dir, "failing_tests")
     print(f"Checking: {failing_tests_file}")
@@ -29,7 +34,7 @@ def run_test_for_class_with_d4j(working_dir, mutated_class):
         return "killed"
     else:
         print("Mutant survived")
-        return "Survived"
+        return "survived"
 
 
 def log_java_file(java_file_path, working_dir):
