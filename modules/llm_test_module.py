@@ -48,14 +48,10 @@ def generate_mutants_for_project(working_dir, project_id, bug_id, model=""):
     """
     Generate mutants for the entire project using the LLM mutation engine.
     """
-    src_dir = os.path.join(working_dir, "src")
-    java_folder_path = None
-    for root, dirs, files in os.walk(src_dir):
-        if "test" in dirs:
-            dirs.remove("test")
-        if "java" in dirs:
-            java_folder_path = os.path.join(root, "java")
-            break
+
+    src_dir = os.path.join(working_dir, "src", "main", "java")
+    if not os.path.exists(src_dir):
+        src_dir = os.path.join(working_dir, "src", "java")
 
     base_mutants_dir = os.path.join("mutants", f"{project_id}_{bug_id}")
 
@@ -63,9 +59,9 @@ def generate_mutants_for_project(working_dir, project_id, bug_id, model=""):
 
     engine = LLMMutationEngine(model)
 
-    print(f"Generating mutants for: {java_folder_path}")
+    print(f"Generating mutants for: {src_dir}")
 
-    for root, _, files in os.walk(java_folder_path):
+    for root, _, files in os.walk(src_dir):
         for file in files:
             if not file.endswith(".java"):
                 continue
@@ -149,8 +145,12 @@ def apply_single_mutant(mutant_file, working_dir):
     rel_package_path = os.path.join(*parts[1:-1])
     print(f"Detected package: {rel_package_path}")
 
+    src_dir = os.path.join(working_dir, "src", "main", "java")
+    if not os.path.exists(src_dir):
+        src_dir = os.path.join(working_dir, "src", "java")
+
     dest_dir = os.path.join(
-        working_dir, "src", "main", "java", rel_package_path
+        src_dir, rel_package_path
     )
     os.makedirs(dest_dir, exist_ok=True)
 

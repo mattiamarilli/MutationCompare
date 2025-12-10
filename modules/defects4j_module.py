@@ -50,7 +50,7 @@ def defects4j_test_with_timeout(working_dir, timeout=30):
     """
     try:
         subprocess.run(
-            ["defects4j", "test"],
+            "defects4j test",
             shell=True,
             cwd=working_dir,
             timeout=timeout,
