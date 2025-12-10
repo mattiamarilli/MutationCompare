@@ -1,8 +1,7 @@
 import json
 import re
 import requests
-from google import genai
-from environment.config import GOOGLE_AI_API_KEY, OPENROUTER_API_KEY
+from environment.config import OPENROUTER_API_KEY
 
 class LLMMutationEngine:
     """
@@ -26,19 +25,13 @@ class LLMMutationEngine:
     - MTD (Method Call Replacement): replace a method call with another valid one
     """
 
-    def __init__(self, open_router=False, model=""):
+    def __init__(self, model=""):
         """
         Initialize the mutation engine.
-
         Args:
-            open_router (bool): Use OpenRouter API if True, otherwise Google GenAI.
             model (str): Model name to use with OpenRouter.
         """
-        self.is_open_router = open_router
-        if not open_router:
-            self.client = genai.Client(api_key=GOOGLE_AI_API_KEY)
-        else:
-            self.model = model
+        self.model = model
 
     def mutate_java_file(self, java_file_path: str):
         """
@@ -111,29 +104,20 @@ class LLMMutationEngine:
             {java_class_clean}
         """
 
-        # Choose the API based on configuration
-        if self.is_open_router:
-            # Send request to OpenRouter
-            response = requests.post(
-                url="https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                data=json.dumps({
-                    "model": self.model,
-                    "messages": [{"role": "user", "content": prompt}]
-                })
-            )
-            print(response)
-            text = response.json()["choices"][0]["message"]["content"].strip()
-        else:
-            # Send request to Google GenAI
-            response = self.client.models.generate_content(
-                model="gemini-3-pro-preview",
-                contents=prompt,
-            )
-            text = response.text.strip()
+        # Send request to OpenRouter
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            data=json.dumps({
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt}]
+            })
+        )
+        #print(response.json())
+        text = response.json()["choices"][0]["message"]["content"].strip()
 
         # Parse JSON lines from LLM output
         new_mutations = []

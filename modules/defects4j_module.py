@@ -51,12 +51,14 @@ def defects4j_test_with_timeout(working_dir, timeout=30):
     try:
         subprocess.run(
             ["defects4j", "test"],
+            shell=True,
             cwd=working_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=timeout
+            timeout=timeout,
+            capture_output=True, 
+            text=True
         )
         return "ok"
 
     except subprocess.TimeoutExpired:
         return "timeout"
+

@@ -3,8 +3,7 @@ import csv
 import shutil
 from environment.config import *
 from modules.defects4j_module import defects4j_checkout, defects4j_compile
-from modules.llm_test_module import generate_mutants_for_project, apply_single_mutant, log_java_file, \
-    run_test_for_class_with_d4j
+from modules.llm_test_module import generate_mutants_for_project, apply_single_mutant, run_test_for_class_with_d4j
 
 # Environment setup
 os.environ["PATH"] += os.pathsep + D4J_BIN_PATH
@@ -58,18 +57,7 @@ def main():
                     shutil.rmtree(mutants_base_dir)
 
                 # Generate mutants for this project using the LLM
-                generate_mutants_for_project(
-                    working_dir, project_id, bug_id,
-                    model != GOOGLE_GEMINI, model
-                )
-
-                # Log all .java files in the project
-                src_dir = os.path.join(working_dir, "src/main/java")
-                for root, _, files in os.walk(src_dir):
-                    for file in files:
-                        if file.endswith(".java"):
-                            full_path = os.path.join(root, file)
-                            log_java_file(full_path, working_dir)
+                generate_mutants_for_project(working_dir, project_id, bug_id, model)
 
                 # Apply each mutant and test it
                 for root, _, files in os.walk(mutants_base_dir):

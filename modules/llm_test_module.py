@@ -25,7 +25,9 @@ def run_test_for_class_with_d4j(working_dir, mutated_class):
         print("Timeout (>30s) - mutant killed")
         return "timeout"
 
+    
     failing_tests_file = os.path.join(working_dir, "failing_tests")
+    print(failing_tests_file)
     print(f"Checking: {failing_tests_file}")
 
     # If failing_tests is not empty, the mutant is killed
@@ -37,35 +39,33 @@ def run_test_for_class_with_d4j(working_dir, mutated_class):
         return "survived"
 
 
-def log_java_file(java_file_path, working_dir):
-    """
-    Log the relative path of a discovered Java file.
-    """
-    src_root = os.path.join(working_dir, "src")
-    relative_path = os.path.relpath(java_file_path, src_root)
-
-    print(f"Java file found: {relative_path}")
-
-
 def ensure_dir(path):
     """Ensure directory exists."""
     os.makedirs(path, exist_ok=True)
 
 
-def generate_mutants_for_project(working_dir, project_id, bug_id, is_open_router=False, model=""):
+def generate_mutants_for_project(working_dir, project_id, bug_id, model=""):
     """
     Generate mutants for the entire project using the LLM mutation engine.
     """
-    src_dir = os.path.join(working_dir, "src", "main", "java")
+    src_dir = os.path.join(working_dir, "src")
+    java_folder_path = None
+    for root, dirs, files in os.walk(src_dir):
+        if "test" in dirs:
+            dirs.remove("test")
+        if "java" in dirs:
+            java_folder_path = os.path.join(root, "java")
+            break
+
     base_mutants_dir = os.path.join("mutants", f"{project_id}_{bug_id}")
 
     ensure_dir(base_mutants_dir)
 
-    engine = LLMMutationEngine(is_open_router, model)
+    engine = LLMMutationEngine(model)
 
-    print(f"Generating mutants for: {src_dir}")
+    print(f"Generating mutants for: {java_folder_path}")
 
-    for root, _, files in os.walk(src_dir):
+    for root, _, files in os.walk(java_folder_path):
         for file in files:
             if not file.endswith(".java"):
                 continue
