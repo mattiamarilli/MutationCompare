@@ -84,7 +84,7 @@ class LLMMutationEngine:
 
         # Construct the LLM prompt with strict rules
         prompt = f"""
-            Generate exactly 3 mutations of different lines in the following Java class 
+            Generate all the possible mutations for every mutator of different lines in the following Java class 
             for PIT mutation testing.
             Use only the following mutators:
             {self.MUTATORS_DESCRIPTION}

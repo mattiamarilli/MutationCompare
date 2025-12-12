@@ -187,8 +187,8 @@ fabric.properties
 !environment/config.example.py
 !environment/projects.example.csv
 
-results
-results/*
+# results
+# results/*
 
 #Mutants folder
 mutants/*
