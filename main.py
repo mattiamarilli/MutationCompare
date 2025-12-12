@@ -1,5 +1,6 @@
 import os
 import csv
+import shutil
 from environment.config import *
 from modules.pit_test_module import run_pit, analyze_pitest_report
 from modules.defects4j_module import defects4j_checkout, defects4j_compile
@@ -34,6 +35,10 @@ def main():
             working_dir = f"/tmp/{project_id.lower()}_{bug_id}_{fixed_version}"
             log_file = os.path.join(working_dir, "kill.csv")
             major_log_file = os.path.join(working_dir, "mutants.log")
+
+            # Clean previous working directory if present
+            if os.path.exists(working_dir):
+                shutil.rmtree(working_dir)
 
             os.makedirs(working_dir, exist_ok=True)
             print(f"\n=== Processing {project_id} bug {bug_id} ===")

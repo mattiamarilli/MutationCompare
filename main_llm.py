@@ -19,11 +19,6 @@ def main():
     projects_csv = "environment/projects.csv"
     llm_models = ['google/gemini-2.5-flash-lite']
 
-    # Create global results file if missing
-    if not os.path.exists(RESULTS_FILE):
-        with open(RESULTS_FILE, "w") as f:
-            f.write("project_id,bug_id,mutant_name,class,result\n")
-
     with open(projects_csv, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
