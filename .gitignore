@@ -188,7 +188,7 @@ fabric.properties
 !environment/projects.example.csv
 
 # results
-# results/*
+results/*
 
 #Mutants folder
 mutants/*

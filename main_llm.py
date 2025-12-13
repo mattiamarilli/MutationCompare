@@ -17,7 +17,7 @@ os.makedirs(RESULTS_FOLDER, exist_ok=True)
 def main():
     # CSV defining the projects to analyze
     projects_csv = "environment/projects.csv"
-    llm_models = ['google/gemini-2.5-flash-lite']
+    llm_models = ['openai/gpt-5.1-chat']#'mistralai/codestral-2508']#'mistralai/devstral-medium']#'anthropic/claude-opus-4.5']#'amazon/nova-pro-v1']#'openai/gpt-5.1-codex-max']#'anthropic/claude-opus-4.5']#'meta-llama/llama-4-maverick']
 
     with open(projects_csv, newline='') as csvfile:
         reader = csv.DictReader(csvfile)

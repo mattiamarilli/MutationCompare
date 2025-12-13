@@ -41,7 +41,7 @@ def defects4j_test(working_dir):
     return True
 
 
-def defects4j_test_with_timeout(working_dir, timeout=30):
+def defects4j_test_with_timeout(working_dir, timeout=10):
     """
     Run Defects4J tests with a timeout.
     Returns:

@@ -60,20 +60,20 @@ def analyze_pitest_report(csv_path):
         perc = (count / total) * 100
         print(f"{status}: {count} ({perc:.2f}%)")
 
-    # --- 2. Statistics per class ---
-    print("\n=== STATISTICS PER CLASS ===")
-    class_stats = df.groupby("Class")["Status"].value_counts().unstack(fill_value=0)
-    class_stats["Total"] = class_stats.sum(axis=1)  # Total mutants per class
-    print(class_stats.sort_values("Total", ascending=False))
+    # # --- 2. Statistics per class ---
+    # print("\n=== STATISTICS PER CLASS ===")
+    # class_stats = df.groupby("Class")["Status"].value_counts().unstack(fill_value=0)
+    # class_stats["Total"] = class_stats.sum(axis=1)  # Total mutants per class
+    # print(class_stats.sort_values("Total", ascending=False))
 
-    # --- 3. Statistics per mutator ---
-    print("\n=== STATISTICS PER MUTATOR ===")
-    mutator_stats = df.groupby("Mutator")["Status"].value_counts().unstack(fill_value=0)
-    mutator_stats["Total"] = mutator_stats.sum(axis=1)  # Total mutants per mutator
-    print(mutator_stats.sort_values("Total", ascending=False))
+    # # --- 3. Statistics per mutator ---
+    # print("\n=== STATISTICS PER MUTATOR ===")
+    # mutator_stats = df.groupby("Mutator")["Status"].value_counts().unstack(fill_value=0)
+    # mutator_stats["Total"] = mutator_stats.sum(axis=1)  # Total mutants per mutator
+    # print(mutator_stats.sort_values("Total", ascending=False))
 
-    # --- 4. Statistics per method ---
-    print("\n=== STATISTICS PER METHOD ===")
-    method_stats = df.groupby("Method")["Status"].value_counts().unstack(fill_value=0)
-    method_stats["Total"] = method_stats.sum(axis=1)  # Total mutants per method
-    print(method_stats.sort_values("Total", ascending=False))
+    # # --- 4. Statistics per method ---
+    # print("\n=== STATISTICS PER METHOD ===")
+    # method_stats = df.groupby("Method")["Status"].value_counts().unstack(fill_value=0)
+    # method_stats["Total"] = method_stats.sum(axis=1)  # Total mutants per method
+    # print(method_stats.sort_values("Total", ascending=False))

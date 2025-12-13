@@ -1,15 +1,13 @@
 import os
 import shutil
 from modules.defects4j_module import defects4j_compile, defects4j_test_with_timeout
-from llm.llm_mutation_engine_module import LLMMutationEngine
+from llm.llm_mutation_engine_with_test import LLMMutationEngineWithTest
 
 def run_test_for_class_with_d4j(working_dir, mutated_class):
     """
     Run Defects4J tests for the given class and determine
     whether the mutant is killed or survived.
     """
-    test_name = f"{mutated_class}Test"
-    print(f"Running test: {test_name}")
 
     try:
         compiled = defects4j_compile(working_dir)
@@ -53,11 +51,14 @@ def generate_mutants_for_project(working_dir, project_id, bug_id, model=""):
     if not os.path.exists(src_dir):
         src_dir = os.path.join(working_dir, "src", "java")
 
-    base_mutants_dir = os.path.join("mutants", f"{project_id}_{bug_id}")
+    test_dir = os.path.join(working_dir, "src", "test", "java")
+    if not os.path.exists(test_dir):
+        test_dir = os.path.join(working_dir, "src", "java", "test")
 
+    base_mutants_dir = os.path.join("mutants", f"{project_id}_{bug_id}")
     ensure_dir(base_mutants_dir)
 
-    engine = LLMMutationEngine(model)
+    engine = LLMMutationEngineWithTest(model)
 
     print(f"Generating mutants for: {src_dir}")
 
@@ -75,16 +76,33 @@ def generate_mutants_for_project(working_dir, project_id, bug_id, model=""):
 
             print(f"Analyzing Java file: {rel_path}")
 
-            # Generate mutations via LLM
-            mutations = engine.mutate_java_file(java_path)
+            # Trova il file di test corrispondente
+            class_name = file.replace(".java", "")
+            test_file_name = f"{class_name}Test.java"
+            test_file_path = None
+
+            for t_root, _, t_files in os.walk(test_dir):
+                if test_file_name in t_files:
+                    test_file_path = os.path.join(t_root, test_file_name)
+                    break
+
+            if test_file_path:
+                print(f"Found corresponding test file: {test_file_path}")
+            else:
+                print(f"No test file found for {class_name}, proceeding without it")
+
+            # Genera mutazioni passando il file di test (se trovato)
+
+            if test_file_path:
+                mutations = engine.mutate_java_file(java_path, test_file_path)
+            else:
+                mutations = None
 
             if not mutations:
                 print("No mutations generated")
                 continue
 
             print(f"{len(mutations)} mutations generated - saving mutants to {target_dir}")
-
-            class_name = file.replace(".java", "")
 
             for idx, mutation in enumerate(mutations, start=1):
                 mutant_file = os.path.join(
